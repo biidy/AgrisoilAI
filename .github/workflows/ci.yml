@@ -1,0 +1,14 @@
+name: MLOps Training Pipeline
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  train-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run MLRun Pipeline
+      run: |
+        pip install mlrun
+        python workflow.py --source-url "./data/master_dataset_mada.csv"
