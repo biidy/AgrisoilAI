@@ -1,33 +1,34 @@
 import os
 
-# --- CETTE PARTIE DOIT ÊTRE LA TOUTE PREMIÈRE ---
+# --- ÉTAPE 0 : CONFIGURATION RÉSEAU (DOIT ÊTRE AU DÉBUT) ---
+# Force MLRun à travailler en local
 os.environ["MLRUN_DBPATH"] = "local"
-os.environ["MLRUN_ARTIFACT_PATH"] = "./artifacts"
-# -----------------------------------------------
-
+# On remonte d'un niveau (../) pour que les artefacts soient à la racine du projet et non dans /pipeline
+os.environ["MLRUN_ARTIFACT_PATH"] = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "artifacts"))
 
 import mlrun
 
+# --- ÉTAPE 1 : INITIALISATION DU PROJET ---
+# Le context doit être la racine du projet (le parent du dossier pipeline)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+artifact_path = os.environ["MLRUN_ARTIFACT_PATH"]
 
-project_root = os.path.abspath("./")
-if not os.path.exists("./artifacts"):
-    os.makedirs("./artifacts")
+if not os.path.exists(artifact_path):
+    os.makedirs(artifact_path)
 
-# --- INITIALISATION DU PROJET ---
-# On remplace l'import complexe de KFP par la gestion native du projet
 project = mlrun.get_or_create_project("agrisoil-ai", context=project_root)
 
-# On enregistre les fonctions une seule fois
+# --- ÉTAPE 2 : ENREGISTREMENT DES COMPOSANTS ---
+# On utilise des chemins relatifs à partir de la racine du projet (project_root)
 project.set_function("components/data_prep.py", name="data-prep", kind="job", image="mlrun/mlrun")
 project.set_function("components/train.py", name="train", kind="job", image="mlrun/mlrun")
 project.set_function("components/evaluate.py", name="evaluate", kind="job", image="mlrun/mlrun")
 
-# --- LE WORKFLOW (Version Simplifiée) ---
-# Au lieu d'utiliser @dsl.pipeline qui est sensible aux versions de KFP,
-# on utilise une fonction Python standard que MLRun va orchestrer.
-
+# --- ÉTAPE 3 : DÉFINITION DU WORKFLOW ---
 def run_mada_pipeline(source_url):
-    # Étape 1 : Préparation
+    """Orchestre les 3 étapes du projet."""
+    
+    # 1. Préparation des données
     prep = project.run_function(
         "data-prep", 
         handler="prepare_data",
@@ -35,7 +36,7 @@ def run_mada_pipeline(source_url):
         local=True
     )
 
-    # Étape 2 : Entraînement
+    # 2. Entraînement
     train = project.run_function(
         "train",
         handler="train_model",
@@ -44,25 +45,30 @@ def run_mada_pipeline(source_url):
         local=True
     )
 
-    # Étape 3 : Évaluation
+    # 3. Évaluation
     evaluate_run = project.run_function(
-    "evaluate",
-    handler="evaluate_model", # Nom de la fonction dans evaluate.py
-    inputs={
-        "model_item": train_run.outputs['crop_model'], # Assure-toi que c'est 'crop_model'
-        "test_set": prep_run.outputs['test_set']
-    },
-    local=True
+        "evaluate",
+        handler="evaluate_model",
+        inputs={
+            "model_item": train.outputs['crop_model'], 
+            "test_set": prep.outputs['test_set']
+        },
+        local=True
     )
-    return evaluate
+    
+    return evaluate_run
 
-# --- EXÉCUTION ---
+# --- ÉTAPE 4 : POINT D'ENTRÉE ---
 if __name__ == "__main__":
-    DATA_URL = "./data/master_dataset_mada_30k_FINAL.csv"
+    # Chemin vers le dataset à partir de la racine
+    DATA_URL = os.path.join(project_root, "data", "master_dataset_mada_30k_FINAL.csv")
     
-    # Lancement du workflow
-    run_mada_pipeline(source_url=DATA_URL)
+    print(f"🚀 Démarrage du pipeline depuis : {os.path.dirname(__file__)}")
     
-    # Sauvegarde finale pour GitHub
-    project.save()
-    print("Pipeline exécuté avec succès et projet sauvegardé.")
+    try:
+        run_mada_pipeline(source_url=DATA_URL)
+        project.save()
+        print("✅ Pipeline terminé avec succès !")
+        print(f"📁 Artefacts disponibles dans : {artifact_path}")
+    except Exception as e:
+        print(f"❌ Erreur : {e}")
