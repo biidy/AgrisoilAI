@@ -43,4 +43,4 @@ if __name__ == "__main__":
     DATA_URL = "./data/master_dataset_mada_30k_FINAL.csv"
     
     # On lance le pipeline localement pour tester
-     mlrun.run_pipeline(crop_pipeline, arguments={"source_url": DATA_URL}, local=True)
+    mlrun.run_pipeline(crop_pipeline, arguments={"source_url": DATA_URL}, local=True)
