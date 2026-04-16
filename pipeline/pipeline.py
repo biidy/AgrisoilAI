@@ -1,5 +1,9 @@
 import mlrun
-from kfp import dsl
+try:
+    from kfp import dsl
+except ImportError:
+    # Option de secours si kfp n'est pas là mais que mlrun est chargé
+    from mlrun.model import dsl
 
 # 1. On définit la fonction du pipeline
 @dsl.pipeline(
