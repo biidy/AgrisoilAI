@@ -1,9 +1,13 @@
-import mlrun
 import os
 
-# --- CONFIGURATION ENVIRONNEMENT ---
+# --- CETTE PARTIE DOIT ÊTRE LA TOUTE PREMIÈRE ---
 os.environ["MLRUN_DBPATH"] = "local"
-os.environ["MLRUN_ARTIFACT_PATH"] = os.path.abspath("./artifacts")
+os.environ["MLRUN_ARTIFACT_PATH"] = "./artifacts"
+# -----------------------------------------------
+
+
+import mlrun
+
 
 project_root = os.path.abspath("./")
 if not os.path.exists("./artifacts"):
