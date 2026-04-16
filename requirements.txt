@@ -1,5 +1,5 @@
-mlrun~=1.5.0
-kfp==1.8.13
+mlrun
+kfp
 xgboost
 pandas
 scikit-learn
