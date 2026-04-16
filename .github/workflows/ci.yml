@@ -1,14 +1,25 @@
 name: MLOps Training Pipeline
-on:
-  push:
-    branches: [ main ]
+on: [push]
 
 jobs:
-  train-pipeline:
+  train-and-deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Run MLRun Pipeline
+
+    - name: Install dependencies
       run: |
-        pip install mlrun
-        python pipeline/pipeline.py --source-url "./data/master_dataset_mada_30k_FINAL.csv"
+        pip install -r requirements.txt
+
+    - name: Execution du Pipeline MLRun
+      run: |
+        # On lance ton script workflow.py qui génère le model.pkl
+        python pipeline/pipeline.py
+
+    - name: Sauvegarder le modèle comme artefact GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: crop-recommendation-model
+        # On indique le chemin où MLRun ou ton script a généré le fichier
+        path: ./models/crop_model.pkl
+        retention-days: 5 # Le fichier reste dispo 5 jours sur GitHub
