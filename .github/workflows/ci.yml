@@ -11,4 +11,4 @@ jobs:
     - name: Run MLRun Pipeline
       run: |
         pip install mlrun
-        python workflow.py --source-url "./data/master_dataset_mada.csv"
+        python pipeline/pipeline.py --source-url "./data/master_dataset_mada_30k_FINAL.csv"
