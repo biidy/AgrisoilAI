@@ -18,4 +18,7 @@ def train_model(context, train_set: mlrun.DataItem, n_estimators=100, learning_r
     
     # Log du modèle dans MLRun
     context.set_label('accuracy', 0.94) # On peut automatiser ce label
-    context.log_model("crop_model", body=model, model_file="model.pkl", metrics={"accuracy": 0.94})
+    context.log_model("model", # Utilise "model" comme nom de clé
+                  body=model, 
+                  model_file="model.pkl", 
+                  metrics={"accuracy": 0.94})

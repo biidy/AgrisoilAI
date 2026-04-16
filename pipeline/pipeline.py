@@ -26,6 +26,7 @@ def run_mada_pipeline(source_url):
     # Étape 1 : Préparation
     prep = project.run_function(
         "data-prep", 
+        handler="prepare_data",
         params={"source_url": source_url},
         local=True
     )
@@ -33,19 +34,21 @@ def run_mada_pipeline(source_url):
     # Étape 2 : Entraînement
     train = project.run_function(
         "train",
+        handler="train_model",
         inputs={"train_set": prep.outputs['train_set']},
         params={"n_estimators": 100},
         local=True
     )
 
     # Étape 3 : Évaluation
-    evaluate = project.run_function(
-        "evaluate",
-        inputs={
-            "model_item": train.outputs['model'],
-            "test_set": prep.outputs['test_set']
-        },
-        local=True
+    evaluate_run = project.run_function(
+    "evaluate",
+    handler="evaluate_model", # Nom de la fonction dans evaluate.py
+    inputs={
+        "model_item": train_run.outputs['crop_model'], # Assure-toi que c'est 'crop_model'
+        "test_set": prep_run.outputs['test_set']
+    },
+    local=True
     )
     return evaluate
 
