@@ -4,15 +4,17 @@ on: [push]
 jobs:
   train-and-deploy:
     runs-on: ubuntu-latest
+    # Sécurité : On arrête le job s'il dépasse 15 minutes (évite de consommer tes quotas)
+    timeout-minutes: 15 
+
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
     
-    # --- AJOUTE CETTE ÉTAPE ---
     - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11' 
-    # ---------------------------
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
@@ -20,14 +22,18 @@ jobs:
         pip install -r requirements.txt
 
     - name: Execution du Pipeline MLRun
+      # On force le mode local ici pour ignorer toute tentative de connexion réseau
+      env:
+        MLRUN_DBPATH: "local"
+        MLRUN_ARTIFACT_PATH: "./artifacts"
       run: |
-        # On lance ton script workflow.py qui génère le model.pkl
         python pipeline/pipeline.py
 
-    - name: Sauvegarder le modèle comme artefact GitHub
+    - name: Sauvegarder les artefacts GitHub (Modèle et Graphes)
+      if: always() # Sauvegarde même si une étape précédente a échoué (utile pour les logs)
       uses: actions/upload-artifact@v4
       with:
-        name: crop-recommendation-model
-        # On indique le chemin où MLRun ou ton script a généré le fichier
-        path: ./models/crop_model.pkl
-        retention-days: 5 # Le fichier reste dispo 5 jours sur GitHub
+        name: agrisoil-ai-results
+        # On sauvegarde tout le dossier artifacts (modèle .pkl, encodeurs et matrice de confusion)
+        path: ./artifacts/
+        retention-days: 5
