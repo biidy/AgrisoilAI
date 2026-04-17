@@ -24,8 +24,8 @@ jobs:
     - name: Execution du Pipeline MLRun
       # On force le mode local ici pour ignorer toute tentative de connexion réseau
       env:
-         MLRUN_DBPATH: "local"
-         MLRUN_ARTIFACT_PATH: "./artifac
+        MLRUN_DBPATH: "local"
+        MLRUN_ARTIFACT_PATH: "./artifacts"
       run: |
         python pipeline/pipeline.py
 
