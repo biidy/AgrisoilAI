@@ -1,44 +1,34 @@
 import os
-import sys
+import mlrun
 
-# --- FORÇAGE AVANT TOUT ---
-# On définit un fichier de base de données local réel
-db_path = os.path.abspath("./mlrun.db")
-os.environ["MLRUN_DBPATH"] = f"sqlite:///{db_path}?mode=rwc"
-os.environ["MLRUN_ARTIFACT_PATH"] = os.path.abspath("./artifacts")
-os.environ["MLRUN_HTTPDB__DISABLE_AUTO_LOGIN"] = "true"
+# --- CONFIGURATION (Comme ton projet Advertising) ---
+os.environ["MLRUN_DBPATH"] = "local"
+# On remonte d'un niveau pour sortir du dossier pipeline/
+os.environ["MLRUN_ARTIFACT_PATH"] = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "artifacts"))
 
 import mlrun
 
-# On force MLRun à utiliser ce chemin immédiatement
-mlrun.set_environment(db=os.environ["MLRUN_DBPATH"], artifact_path=os.environ["MLRUN_ARTIFACT_PATH"])
-
-# --- ÉTAPE 1 : INITIALISATION DU PROJET ---
-# Le context doit être la racine du projet (le parent du dossier pipeline)
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# On prépare le dossier artifacts
 artifact_path = os.environ["MLRUN_ARTIFACT_PATH"]
-
 if not os.path.exists(artifact_path):
     os.makedirs(artifact_path)
 
+# Initialisation du projet
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 project = mlrun.get_or_create_project("agrisoil-ai", context=project_root)
 
-# --- ÉTAPE 2 : ENREGISTREMENT DES COMPOSANTS ---
-# On utilise des chemins relatifs à partir de la racine du projet (project_root)
+# Enregistrement des fonctions
 project.set_function("components/data_prep.py", name="data-prep", kind="job", image="mlrun/mlrun")
 project.set_function("components/train.py", name="train", kind="job", image="mlrun/mlrun")
 project.set_function("components/evaluate.py", name="evaluate", kind="job", image="mlrun/mlrun")
 
-# --- ÉTAPE 3 : DÉFINITION DU WORKFLOW ---
 def run_mada_pipeline(source_url):
-    """Orchestre les 3 étapes du projet."""
-    
-    # 1. Préparation des données
+    # 1. Préparation
     prep = project.run_function(
         "data-prep", 
         handler="prepare_data",
         params={"source_url": source_url},
-        local=True
+        local=True # <--- TRÈS IMPORTANT
     )
 
     # 2. Entraînement
@@ -47,7 +37,7 @@ def run_mada_pipeline(source_url):
         handler="train_model",
         inputs={"train_set": prep.outputs['train_set']},
         params={"n_estimators": 100},
-        local=True
+        local=True # <--- TRÈS IMPORTANT
     )
 
     # 3. Évaluation
@@ -58,22 +48,17 @@ def run_mada_pipeline(source_url):
             "model_item": train.outputs['crop_model'], 
             "test_set": prep.outputs['test_set']
         },
-        local=True
+        local=True # <--- TRÈS IMPORTANT
     )
-    
     return evaluate_run
 
-# --- ÉTAPE 4 : POINT D'ENTRÉE ---
 if __name__ == "__main__":
-    # Chemin vers le dataset à partir de la racine
     DATA_URL = os.path.join(project_root, "data", "master_dataset_mada_30k_FINAL.csv")
     
-    print(f"🚀 Démarrage du pipeline depuis : {os.path.dirname(__file__)}")
-    
+    print("🚀 Lancement du pipeline (Ignorer les warnings de connexion API)...")
     try:
         run_mada_pipeline(source_url=DATA_URL)
         project.save()
         print("✅ Pipeline terminé avec succès !")
-        print(f"📁 Artefacts disponibles dans : {artifact_path}")
     except Exception as e:
-        print(f"❌ Erreur : {e}")
+        print(f"❌ Erreur critique : {e}")

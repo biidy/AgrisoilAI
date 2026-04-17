@@ -24,10 +24,8 @@ jobs:
     - name: Execution du Pipeline MLRun
       # On force le mode local ici pour ignorer toute tentative de connexion réseau
       env:
-         # On utilise le même chemin sqlite que dans le script
-        MLRUN_DBPATH: "sqlite:///home/runner/work/AgrisoilAI/AgrisoilAI/mlrun.db?mode=rwc"
-        MLRUN_ARTIFACT_PATH: "./artifacts"
-        MLRUN_HTTPDB__DISABLE_AUTO_LOGIN: "true"
+         MLRUN_DBPATH: "local"
+         MLRUN_ARTIFACT_PATH: "./artifac
       run: |
         python pipeline/pipeline.py
 
