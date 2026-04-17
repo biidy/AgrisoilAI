@@ -45,7 +45,7 @@ def run_mada_pipeline(source_url):
         handler="train_model",
         inputs={"train_set": train_path},
         params={"n_estimators": 100},
-        local=True # <--- TRÈS IMPORTANT
+        local=True,
         artifact_path=artifact_path
     )
 
@@ -60,7 +60,7 @@ def run_mada_pipeline(source_url):
             "model_item": model_path, # On passe le chemin (string), pas l'objet
             "test_set": test_path
         },
-        local=True # <--- TRÈS IMPORTANT
+        local=True, # <--- TRÈS IMPORTANT
         artifact_path=artifact_path
     )
     return evaluate_run
