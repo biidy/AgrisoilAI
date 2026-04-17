@@ -36,6 +36,9 @@ def run_mada_pipeline(source_url):
     train_path = os.path.join(artifact_path, "train_set.csv")
     test_path = os.path.join(artifact_path, "test_set.csv")
 
+    print(f"DEBUG: Chemin train_set calculé -> {train_path}")
+    print(f"DEBUG: Le fichier existe-t-il ? -> {os.path.exists(train_path)}")
+
     # 2. Entraînement
     train = project.run_function(
         "train",
@@ -43,6 +46,7 @@ def run_mada_pipeline(source_url):
         inputs={"train_set": train_path},
         params={"n_estimators": 100},
         local=True # <--- TRÈS IMPORTANT
+        artifact_path=artifact_path
     )
 
     # On définit le chemin du modèle généré par l'étape train
@@ -53,10 +57,11 @@ def run_mada_pipeline(source_url):
         "evaluate",
         handler="evaluate_model",
         inputs={
-            "model_item": model_path, 
+            "model_item": model_path, # On passe le chemin (string), pas l'objet
             "test_set": test_path
         },
         local=True # <--- TRÈS IMPORTANT
+        artifact_path=artifact_path
     )
     return evaluate_run
 
