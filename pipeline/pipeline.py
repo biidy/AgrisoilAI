@@ -22,6 +22,7 @@ project = mlrun.get_or_create_project("agrisoil-ai", context=project_root)
 project.set_function("components/data_prep.py", name="data-prep", kind="job", image="mlrun/mlrun")
 project.set_function("components/train.py", name="train", kind="job", image="mlrun/mlrun")
 project.set_function("components/evaluate.py", name="evaluate", kind="job", image="mlrun/mlrun")
+project.set_function("components/feature_selection.py", name="feature-selection", kind="job", image="mlrun/mlrun")
 
 def find_file(pattern):
     """Cherche un fichier dans le dossier artifacts, même s'il est dans un sous-dossier."""
@@ -70,7 +71,17 @@ def run_mada_pipeline(source_url):
         artifact_path=os.path.abspath("artifacts")
     )
     
-    return evaluate_run
+    # --- Étape 4 : NOUVELLE ÉTAPE (Analyse des Features) ---
+    # On utilise le même model_path trouvé précédemment
+    feature_run = project.run_function(
+        "feature-selection",
+        handler="report_importance",
+        inputs={"model_path": model_path},
+        local=True,
+        artifact_path=os.path.abspath("artifacts")
+    )
+    
+    return feature_run
 
 if __name__ == "__main__":
     DATA_URL = os.path.join(project_root, "data", "master_dataset_mada_30k_FINAL.csv")

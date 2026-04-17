@@ -30,6 +30,7 @@ def train_model(context, train_set: mlrun.DataItem, n_estimators: int = 100, lea
         random_state=42
     )
     
+    context.logger.info(f"Ordre exact des colonnes envoyées au modèle : {X.columns.tolist()}")
     model.fit(X, y)
 
     # --- 3. SAUVEGARDE ET LOG ---
