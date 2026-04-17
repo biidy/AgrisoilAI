@@ -31,22 +31,30 @@ def run_mada_pipeline(source_url):
         local=True # <--- TRÈS IMPORTANT
     )
 
+    # --- CORRECTION ICI : On définit manuellement les chemins si outputs est vide ---
+    # En mode local, on sait que les fichiers sont dans le dossier artifacts
+    train_path = os.path.join(artifact_path, "train_set.csv")
+    test_path = os.path.join(artifact_path, "test_set.csv")
+
     # 2. Entraînement
     train = project.run_function(
         "train",
         handler="train_model",
-        inputs={"train_set": prep.outputs['train_set']},
+        inputs={"train_set": train_path},
         params={"n_estimators": 100},
         local=True # <--- TRÈS IMPORTANT
     )
+
+    # On définit le chemin du modèle généré par l'étape train
+    model_path = os.path.join(artifact_path, "crop_model.pkl")
 
     # 3. Évaluation
     evaluate_run = project.run_function(
         "evaluate",
         handler="evaluate_model",
         inputs={
-            "model_item": train.outputs['crop_model'], 
-            "test_set": prep.outputs['test_set']
+            "model_item": model_path, 
+            "test_set": test_path
         },
         local=True # <--- TRÈS IMPORTANT
     )
