@@ -22,47 +22,53 @@ project.set_function("components/data_prep.py", name="data-prep", kind="job", im
 project.set_function("components/train.py", name="train", kind="job", image="mlrun/mlrun")
 project.set_function("components/evaluate.py", name="evaluate", kind="job", image="mlrun/mlrun")
 
+def find_file(pattern):
+    """Cherche un fichier dans le dossier artifacts, même s'il est dans un sous-dossier."""
+    files = glob.glob(os.path.join("artifacts", "**", pattern), recursive=True)
+    return files[0] if files else None
+
 def run_mada_pipeline(source_url):
-    # 1. Préparation
+    # 1. Préparation des données
     prep = project.run_function(
         "data-prep", 
         handler="prepare_data",
         params={"source_url": source_url},
-        local=True # <--- TRÈS IMPORTANT
+        local=True,
+        artifact_path=os.path.abspath("artifacts")
     )
 
-    # --- CORRECTION ICI : On définit manuellement les chemins si outputs est vide ---
-    # En mode local, on sait que les fichiers sont dans le dossier artifacts
-    train_path = os.path.join(artifact_path, "train_set.csv")
-    test_path = os.path.join(artifact_path, "test_set.csv")
-
-    print(f"DEBUG: Chemin train_set calculé -> {train_path}")
-    print(f"DEBUG: Le fichier existe-t-il ? -> {os.path.exists(train_path)}")
+    # RECHERCHE DYNAMIQUE DES FICHIERS
+    train_path = find_file("train_set.csv")
+    test_path = find_file("test_set.csv")
+    
+    print(f"DEBUG: Train path trouvé -> {train_path}")
 
     # 2. Entraînement
     train = project.run_function(
         "train",
         handler="train_model",
-        inputs={"train_set": train_path},
+        inputs={"train_set": train_path}, 
         params={"n_estimators": 100},
         local=True,
-        artifact_path=artifact_path
+        artifact_path=os.path.abspath("artifacts")
     )
 
-    # On définit le chemin du modèle généré par l'étape train
-    model_path = os.path.join(artifact_path, "crop_model.pkl")
+    # RECHERCHE DU MODÈLE GÉNÉRÉ
+    model_path = find_file("crop_model.pkl")
+    print(f"DEBUG: Model path trouvé -> {model_path}")
 
     # 3. Évaluation
     evaluate_run = project.run_function(
         "evaluate",
         handler="evaluate_model",
         inputs={
-            "model_item": model_path, # On passe le chemin (string), pas l'objet
+            "model_item": model_path, 
             "test_set": test_path
         },
-        local=True, # <--- TRÈS IMPORTANT
-        artifact_path=artifact_path
+        local=True,
+        artifact_path=os.path.abspath("artifacts")
     )
+    
     return evaluate_run
 
 if __name__ == "__main__":
