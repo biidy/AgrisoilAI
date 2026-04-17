@@ -1,5 +1,4 @@
 mlrun
-kfp
 xgboost
 pandas
 scikit-learn

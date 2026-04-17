@@ -1,12 +1,17 @@
 import os
+import sys
 
-# --- ÉTAPE 0 : CONFIGURATION RÉSEAU (DOIT ÊTRE AU DÉBUT) ---
-# Force MLRun à travailler en local
-os.environ["MLRUN_DBPATH"] = "local"
-# On remonte d'un niveau (../) pour que les artefacts soient à la racine du projet et non dans /pipeline
-os.environ["MLRUN_ARTIFACT_PATH"] = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "artifacts"))
+# --- FORÇAGE AVANT TOUT ---
+# On définit un fichier de base de données local réel
+db_path = os.path.abspath("./mlrun.db")
+os.environ["MLRUN_DBPATH"] = f"sqlite:///{db_path}?mode=rwc"
+os.environ["MLRUN_ARTIFACT_PATH"] = os.path.abspath("./artifacts")
+os.environ["MLRUN_HTTPDB__DISABLE_AUTO_LOGIN"] = "true"
 
 import mlrun
+
+# On force MLRun à utiliser ce chemin immédiatement
+mlrun.set_environment(db=os.environ["MLRUN_DBPATH"], artifact_path=os.environ["MLRUN_ARTIFACT_PATH"])
 
 # --- ÉTAPE 1 : INITIALISATION DU PROJET ---
 # Le context doit être la racine du projet (le parent du dossier pipeline)
