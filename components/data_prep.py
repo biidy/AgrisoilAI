@@ -18,7 +18,7 @@ def prepare_data(context, source_url: str):
     
     # --- SELECTION DES FEATURES ---
     features = ['Altitude', 'Mois', 'Saison', 'SOC', 'Clay', 'Nitrogen', 
-                'CEC', 'Temp', 'Hum', 'pH', 'Rain', 'Lux', 'CE', 'Region_Encoded']
+                'CEC', 'Temp', 'Hum', 'pH', 'Lux', 'CE', 'Region_Encoded']
     
     X = df[features]
     y = df['Crop_Encoded']
